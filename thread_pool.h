@@ -72,8 +72,9 @@ namespace thread_ext {
                     return std::nullopt;
                 }
 
-                return submit_inner<T>(p, [p, task, delay_ms]() {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+                auto scheduled_time = std::chrono::system_clock::now() + std::chrono::milliseconds(delay_ms);
+                return submit_inner<T>(p, [p, task, scheduled_time]() {
+                    std::this_thread::sleep_until(scheduled_time);
                     T res = task();
                     p->set_value(res);
                 });
@@ -85,9 +86,10 @@ namespace thread_ext {
                 if (!p) {
                     return std::nullopt;
                 }
-                
-                return submit_inner<void>(p, [p, task, delay_ms]() {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+
+                auto scheduled_time = std::chrono::system_clock::now() + std::chrono::milliseconds(delay_ms);
+                return submit_inner<void>(p, [p, task, scheduled_time]() {
+                    std::this_thread::sleep_until(scheduled_time);
                     task();
                     p->set_value();
                 });
