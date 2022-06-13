@@ -8,9 +8,9 @@
 
 TEST(ThreadPoolTest, VoidTypeTaskInvoked) {
     auto tp = thread_ext::ThreadPool(1);
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
     };
 
     auto res = tp.submit<void>(task);
@@ -18,16 +18,16 @@ TEST(ThreadPoolTest, VoidTypeTaskInvoked) {
 
     res->get();
 
-    EXPECT_EQ(callCount, 1);
+    EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
 }
 
 TEST(ThreadPoolTest, IntTypeTaskInvoked) {
     auto tp = thread_ext::ThreadPool(1);
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
         return 5;
     };
 
@@ -37,16 +37,16 @@ TEST(ThreadPoolTest, IntTypeTaskInvoked) {
     uint8_t n = res->get();
     EXPECT_EQ(n, 5);
 
-    EXPECT_EQ(callCount, 1);
+    EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
 }
 
 TEST(ThreadPoolTest, IntTypeScheduledTaskInvoked) {
     auto tp = thread_ext::ThreadPool(1);
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
         return 1;
     };
 
@@ -56,16 +56,16 @@ TEST(ThreadPoolTest, IntTypeScheduledTaskInvoked) {
     uint8_t n = res->get();
     EXPECT_EQ(n, 1);
 
-    EXPECT_EQ(callCount, 1);
+    EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
 }
 
 TEST(ThreadPoolTest, VoidTypeScheduledTaskInvoked) {
     auto tp = thread_ext::ThreadPool(1);
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
     };
 
     auto res = tp.schedule<void>(task, 10);
@@ -73,7 +73,7 @@ TEST(ThreadPoolTest, VoidTypeScheduledTaskInvoked) {
 
     res->get();
 
-    EXPECT_EQ(callCount, 1);
+    EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
 }
@@ -81,36 +81,36 @@ TEST(ThreadPoolTest, VoidTypeScheduledTaskInvoked) {
 TEST(ThreadPoolTest, VerifyNoSubmitAfterShutdown) {
     auto tp = thread_ext::ThreadPool(1);
     tp.shutdown();
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
     };
 
     auto res = tp.submit<void>(task);
-    EXPECT_EQ(callCount, 0);
+    EXPECT_EQ(call_count, 0);
     EXPECT_EQ(res, std::nullopt);
 }
 
 TEST(ThreadPoolTest, VerifyNoScheduleAfterShutdown) {
     auto tp = thread_ext::ThreadPool(1);
     tp.shutdown();
-    uint8_t callCount = 0;
-    auto task = [&callCount]() {
-        ++callCount;
+    uint8_t call_count = 0;
+    auto task = [&call_count]() {
+        ++call_count;
     };
 
     auto res = tp.schedule<void>(task, 10000000000);
-    EXPECT_EQ(callCount, 0);
+    EXPECT_EQ(call_count, 0);
     EXPECT_EQ(res, std::nullopt);
 }
 
 TEST(ThreadPoolTest, VerifyComplexScenario) {
     auto tp = std::make_unique<thread_ext::ThreadPool>(3);
     EXPECT_NE(tp, nullptr);
-    auto callCount = std::atomic<uint8_t>(0);
+    auto call_count = std::atomic<uint8_t>(0);
     auto futures = std::vector<std::future<std::string>>();
-    auto task = [&callCount]() {
-        ++callCount;
+    auto task = [&call_count]() {
+        ++call_count;
         return std::string("task called");
     };
 
@@ -128,7 +128,7 @@ TEST(ThreadPoolTest, VerifyComplexScenario) {
         EXPECT_EQ(s, std::string("task called"));
     }
 
-    EXPECT_EQ(callCount, 10);
+    EXPECT_EQ(call_count, 10);
 
     tp->shutdown();
 }
