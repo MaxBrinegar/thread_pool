@@ -21,6 +21,7 @@ TEST(ThreadPoolTest, VoidTypeTaskInvoked) {
     EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
 }
 
 TEST(ThreadPoolTest, IntTypeTaskInvoked) {
@@ -40,6 +41,7 @@ TEST(ThreadPoolTest, IntTypeTaskInvoked) {
     EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
 }
 
 TEST(ThreadPoolTest, IntTypeScheduledTaskInvoked) {
@@ -59,6 +61,7 @@ TEST(ThreadPoolTest, IntTypeScheduledTaskInvoked) {
     EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
 }
 
 TEST(ThreadPoolTest, VoidTypeScheduledTaskInvoked) {
@@ -76,11 +79,13 @@ TEST(ThreadPoolTest, VoidTypeScheduledTaskInvoked) {
     EXPECT_EQ(call_count, 1);
 
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
 }
 
 TEST(ThreadPoolTest, VerifyNoSubmitAfterShutdown) {
-    auto tp = thread_ext::ThreadPool(1);
+    auto tp = thread_ext::thread_pool(1);
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
     uint8_t call_count = 0;
     auto task = [&call_count]() {
         ++call_count;
@@ -92,8 +97,9 @@ TEST(ThreadPoolTest, VerifyNoSubmitAfterShutdown) {
 }
 
 TEST(ThreadPoolTest, VerifyNoScheduleAfterShutdown) {
-    auto tp = thread_ext::ThreadPool(1);
+    auto tp = thread_ext::thread_pool(1);
     tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
     uint8_t call_count = 0;
     auto task = [&call_count]() {
         ++call_count;
@@ -104,8 +110,15 @@ TEST(ThreadPoolTest, VerifyNoScheduleAfterShutdown) {
     EXPECT_EQ(res, std::nullopt);
 }
 
-TEST(ThreadPoolTest, VerifyComplexScenario) {
-    auto tp = std::make_unique<thread_ext::ThreadPool>(3);
+TEST(ThreadPoolTest, VerifyIsShutdown) {
+    auto tp = thread_ext::thread_pool(1);
+    EXPECT_FALSE(tp.is_shutdown());
+    tp.shutdown();
+    EXPECT_TRUE(tp.is_shutdown());
+}
+
+TEST(ThreadPoolTest, VerifyMixedScenario) {
+    auto tp = std::make_unique<thread_ext::thread_pool>(3);
     EXPECT_NE(tp, nullptr);
     auto call_count = std::atomic<uint8_t>(0);
     auto futures = std::vector<std::future<std::string>>();
@@ -114,8 +127,8 @@ TEST(ThreadPoolTest, VerifyComplexScenario) {
         return std::string("task called");
     };
 
-    for (uint8_t i = 0; i < 10; ++i) {
-        std::optional<std::future<std::string>> opt = (i & 1)
+    for (uint8_t i = 0; i < 100; ++i) {
+        std::optional<std::future<std::string>> opt = (i % 7 == 0)
             ? tp->schedule<std::string>(task, 10)
             : tp->submit<std::string>(task);
 
@@ -128,7 +141,31 @@ TEST(ThreadPoolTest, VerifyComplexScenario) {
         EXPECT_EQ(s, std::string("task called"));
     }
 
-    EXPECT_EQ(call_count, 10);
+    EXPECT_EQ(call_count, 100);
 
     tp->shutdown();
+    EXPECT_TRUE(tp->is_shutdown());
+}
+
+TEST(ThreadPoolTest, VerifyManyTasksScenario) {
+    auto tp = std::make_unique<thread_ext::thread_pool>(10);
+    EXPECT_NE(tp, nullptr);
+    auto call_count = std::atomic<uint16_t>(0);
+    auto futures = std::vector<std::future<void>>();
+    auto task = [&call_count]() {
+        ++call_count;
+    };
+
+    for (uint16_t i = 0; i < 1000; ++i) {
+        std::optional<std::future<void>> opt = tp->submit<void>(task);
+
+        EXPECT_NE(opt, std::nullopt);
+        futures.push_back(std::move(*opt));
+    }
+
+    for (auto& f : futures) {
+        f.get();
+    }
+
+    EXPECT_EQ(call_count, 1000);
 }

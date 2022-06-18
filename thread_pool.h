@@ -11,10 +11,11 @@
 #include <vector>
 #include <future>
 #include <chrono>
-#include <mutex>
+#include <shared_mutex>
 #include <queue>
 #include <optional>
 #include <type_traits>
+#include <condition_variable>
 
 namespace thread_ext {
 
@@ -29,20 +30,23 @@ class ThreadPool {
                     std::function<void()> task;
                     while (true) {
                         {
-                            std::unique_lock lock(tp_mutex_);
-                            cv_.wait(lock, [this]() { return !tasks_.empty() || !active_; });
+                            auto lock = std::unique_lock(mutex_);
+                            cv_.wait(lock, [this]() { return !queue_.empty() || !active_; });
                             if (!active_) {
                                 return;
                             }
-
-                            task = std::move(tasks_.front());
-                            tasks_.pop();
+                            task = std::move(queue_.front());
+                            queue_.pop();
                         }
 
                         task();
                     }
                 } });
             }
+        }
+
+        ~ThreadPool() {
+            shutdown();
         }
 
         template<class T, class U = typename std::enable_if<!std::is_same<T, void>::value>::type>
@@ -103,7 +107,10 @@ class ThreadPool {
 
         void shutdown() {
             {
-                std::unique_lock lock(tp_mutex_);
+                auto lock = std::unique_lock(mutex_);
+                if (!active_) {
+                    return;
+                }
                 active_ = false;
             }
 
@@ -115,15 +122,21 @@ class ThreadPool {
             }
         }
 
+        bool is_shutdown() {
+            auto lock = std::unique_lock(mutex_);
+            return !active_;
+        }
+
     private:
         template<class T>
         std::optional<std::future<T>> submit_inner(const std::shared_ptr<std::promise<T>>& p, std::function<void()>&& task_wrapper) {
             {
-                std::unique_lock lock(tp_mutex_);
-                if (active_ == false) {
+                auto lock = std::unique_lock(mutex_);
+                if (!active_) {
                     return std::nullopt;
                 }
-                tasks_.push(std::move(task_wrapper));
+
+                queue_.push(std::move(task_wrapper));
             }
 
             cv_.notify_one();
@@ -132,12 +145,13 @@ class ThreadPool {
         }
 
     private:
-        mutable std::mutex tp_mutex_;
-        std::condition_variable cv_;
-        std::queue<std::function<void()>> tasks_;
+        mutable std::shared_mutex mutex_;
+        std::condition_variable_any cv_;
+        std::queue<std::function<void()>> queue_;
         std::vector<std::thread> threads_;
         bool active_;
 };
+using thread_pool = ThreadPool;
 };
 
 #endif // THREAD_EXT_THREADPOOL_H_
