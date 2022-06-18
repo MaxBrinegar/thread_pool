@@ -123,7 +123,7 @@ class ThreadPool {
         }
 
         bool is_shutdown() {
-            auto lock = std::unique_lock(mutex_);
+            auto lock = std::shared_lock(mutex_);
             return !active_;
         }
 

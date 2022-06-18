@@ -105,7 +105,7 @@ TEST(ThreadPoolTest, VerifyNoScheduleAfterShutdown) {
         ++call_count;
     };
 
-    auto res = tp.schedule<void>(task, 10000000000);
+    auto res = tp.schedule<void>(task, 1000000000000);
     EXPECT_EQ(call_count, 0);
     EXPECT_EQ(res, std::nullopt);
 }

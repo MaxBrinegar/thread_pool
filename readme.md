@@ -15,7 +15,7 @@ auto fut1 = tp.submit<uint8_t>(task);
 // from within the thread pool to block task execution
 // until the input delay ms time has expired
 // avoid task queue backpressure by keeping schedule
-// calls bounded and delay ms limited
+// calls bounded
 auto fut2 = tp.schedule<void>([] {}, 1000);
 
 uint8_t n1 = fut1->get();
