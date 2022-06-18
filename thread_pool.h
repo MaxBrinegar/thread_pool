@@ -16,6 +16,7 @@
 #include <optional>
 #include <type_traits>
 #include <condition_variable>
+#include <memory>
 
 namespace thread_ext {
 

@@ -1,9 +1,6 @@
 #include <gtest/gtest.h>
-#include <future>
-#include <iostream>
-#include <memory>
 #include <atomic>
-#include <vector>
+
 #include "thread_pool.h"
 
 TEST(ThreadPoolTest, VoidTypeTaskInvoked) {
