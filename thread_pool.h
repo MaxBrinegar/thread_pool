@@ -4,8 +4,8 @@
 * License: MIT
 */
 
-#ifndef THREAD_EXT_THREADPOOL_H_
-#define THREAD_EXT_THREADPOOL_H_
+#ifndef THREAD_EXT_THREAD_POOL_H_
+#define THREAD_EXT_THREAD_POOL_H_
 
 #include <thread>
 #include <vector>
@@ -154,4 +154,4 @@ class ThreadPool {
 using thread_pool = ThreadPool;
 };
 
-#endif // THREAD_EXT_THREADPOOL_H_
+#endif // THREAD_EXT_THREAD_POOL_H_
